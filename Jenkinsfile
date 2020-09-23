@@ -15,6 +15,13 @@ pipeline {
               steps {
                   sh 'docker build -t capstone-project-cloud-devops .'
               }
-         }        
+         }
+         stage('Push Docker Image') {
+              steps {
+                  withDockerRegistry([url: "", credentialsId: "docker-hub"]) {
+                      sh "docker tag capstone-project-cloud-devops crisroddev/capstone-project-cloud-devops"
+                      sh 'docker push crisroddev/capstone-project-cloud-devops'
+              }
+         }         
      }
 }
