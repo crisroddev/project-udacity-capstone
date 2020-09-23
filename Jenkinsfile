@@ -27,7 +27,7 @@ pipeline {
          stage('Deploying') {
              steps {
                  echo 'Deploying to AWS'
-                 withAWS(credentials: 'capstone', region: 'us-east-1') {
+                  withAWS(credentials: 'aws', region: 'us-west-2') {
                      sh 'echo "Uploading to AWS"'
                      s3Upload(pathStyleAccessEnabled: true, payloadSigningEnabled: true, file:'index.html',  bucket:'jenkins-casptone-udacity')
                  }
