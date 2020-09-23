@@ -22,6 +22,11 @@ pipeline {
                       sh "docker tag capstone-project-cloud-devops crisroddev/capstone-project-cloud-devops"
                       sh 'docker push crisroddev/capstone-project-cloud-devops'
               }
+         }
+         stage('Deploying') {
+             steps {
+                 echo 'Deploying to AWS'
+             }
          }         
      }
 }
