@@ -21,7 +21,7 @@ spec:
         app: capstone-project-cloud-devops
     spec:
       containers:
-        - image: crisrod/capstone-project-cloud-devops
+        - image: crisroddev/capstone-project-cloud-devops
           imagePullPolicy: Always
           name: capstone-project-cloud-devops
           ports:
