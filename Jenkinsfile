@@ -32,7 +32,6 @@ pipeline {
                      s3Upload(pathStyleAccessEnabled: true, payloadSigningEnabled: true, file:'index.html',  bucket:'jenkins-casptone-udacity')
                       sh "aws eks --region us-east-1 update-kubeconfig --name EKSCluster-Fej9knGAYnfE"
                       sh "kubectl config use-context arn:aws:eks:us-east-1:438569415701:cluster/EKSCluster-Fej9knGAYnfE"
-                      sh "kubectl set image deployments/capstone-project-cloud-devops capstone-project-cloud-devops=crisroddev/capstone-project-cloud-devops:latest"
                       sh "kubectl apply -f deployment/deployment.yml"
                       sh "kubectl get nodes"
                       sh "kubectl get deployment"
