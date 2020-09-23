@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "production"
+    },
+    {
+        "ParameterKey": "KeyPairJenkinsSSH",
+        "ParameterValue": "JenkinsSSH"
+    },
+    {
+        "ParameterKey": "NetworkAccessIP",
+        "ParameterValue": "0.0.0.0/0"
+    }
+]

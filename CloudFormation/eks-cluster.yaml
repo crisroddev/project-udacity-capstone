@@ -1,0 +1,73 @@
+---
+Description: >
+  Cristian Rodriguez - Udacity DevOps Nanodegree 2020 - Capstone Project.
+  CloudFormation Script to create EKS Clusters.
+
+Parameters:
+  EnvironmentName:
+    Description: An Environment name that will be prefixed to resources
+    Type: String
+    ConstraintDescription: ENV is invalid! choose ENV from list
+    Type: String
+    Default: development
+    AllowedValues:
+      # ENV for development, create and test apps
+      - development 
+      # ENV to test apps before Go Live
+      - staging
+      # ENV to deploy on production and Go Live
+      - production
+
+Resources:
+  ClusterProfileInstance:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref RoleClusterEKS
+  
+  RoleClusterEKS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Version: "1.17"
+      RoleArn: !GetAtt RoleClusterEKS.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-EKS-SEC-GROUP"
+        SubnetIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Sub: ${EnvironmentName}-SUBNETS
+
+Outputs:
+  EksId:
+    Description: The EKS ID
+    Value: !Ref EKSCluster
+    Export:
+      Name: !Sub ${EnvironmentName}-EKSID
+
+  RoleEKS:
+    Description: The role from AWS to create kubernetes clusters
+    Value: !GetAtt RoleClusterEKS.Arn
+    Export:
+      Name: !Sub ${EnvironmentName}-RoleEKS
+...

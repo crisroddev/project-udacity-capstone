@@ -1,0 +1,232 @@
+---
+Description: >
+  Cristian Rodriguez - Udacity DevOps Nanodegree 2020 - Capstone Project.
+  CloudFormation Script to create VPC Resources.
+
+Parameters:
+  EnvironmentName:
+    Description: EnvironmentName that will be prefixed to resources
+    ConstraintDescription: ENV is invalid! choose ENV from list
+    Type: String
+    Default: development
+    AllowedValues:
+      # ENV for development, create and test apps
+      - development 
+      # ENV to test apps before Go Live
+      - staging
+      # ENV to deploy on production and Go Live
+      - production
+  
+Mappings:
+  DefaultConfig:
+    VpcCIDR:
+      CIDR: 10.0.0.0/16
+    Subnet1:
+      CIDR: 10.0.0.0/24
+    Subnet2:
+      CIDR: 10.0.1.0/24
+    Subnet3:
+      CIDR: 10.0.2.0/24
+    Subnet4:
+      CIDR: 10.0.3.0/24
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      CidrBlock: !FindInMap 
+        - DefaultConfig
+        - VpcCIDR
+        - CIDR
+      Tags:
+        - Key: Network Udacity Devops Capstone Project
+          Value: Public
+        - Key: Name
+          Value: !Ref EnvironmentName
+  
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Ref EnvironmentName
+  
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-route-table
+  
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap 
+        - DefaultConfig
+        - Subnet1
+        - CIDR
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Subnet-1
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap 
+        - DefaultConfig
+        - Subnet2
+        - CIDR
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Subnet-2
+  
+  Subnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap 
+        - DefaultConfig
+        - Subnet3
+        - CIDR
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Subnet-3
+  
+  Subnet4:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [3, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap 
+        - DefaultConfig
+        - Subnet4
+        - CIDR
+      Tags:
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-Subnet-4 
+
+  RouteTableAssociationSubnet1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref RouteTable
+
+  RouteTableAssociationSubnet2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref RouteTable
+  
+  RouteTableAssociationSubnet3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet3
+      RouteTableId: !Ref RouteTable
+
+  RouteTableAssociationSubnet4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet4
+      RouteTableId: !Ref RouteTable
+
+  SgEKS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for Cluster
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 1025
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 1025
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  VPCID:
+    Description: A reference for the VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${EnvironmentName}-VPCID
+
+  Subnets:
+    Description: List of the subnets
+    Value: !Join [",", [!Ref Subnet1, !Ref Subnet2, !Ref Subnet3, !Ref Subnet4]]
+    Export:
+      Name: !Sub ${EnvironmentName}-SUBNETS
+  
+  Subnet1:
+    Description: A reference to the Subnet1
+    Value: !Ref Subnet1
+    Export:
+      Name: !Sub ${EnvironmentName}-SUBNET1
+  
+  Subnet2:
+    Description: A reference to the Subnet2
+    Value: !Ref Subnet2
+    Export:
+      Name: !Sub ${EnvironmentName}-SUBNET2
+  
+  Subnet3:
+    Description: A reference to the Subnet3
+    Value: !Ref Subnet3
+    Export:
+      Name: !Sub ${EnvironmentName}-SUBNET3
+
+  Subnet4:
+    Description: A reference to the Subnet4
+    Value: !Ref Subnet4
+    Export:
+      Name: !Sub ${EnvironmentName}-SUBNET4
+
+  SecGroups:
+    Description: List for Security Groups of the EKS
+    Value: !Join [",", [!Ref SgEKS]]
+    Export:
+      Name: !Sub ${EnvironmentName}-EKS-SEC-GROUP
+...

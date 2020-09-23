@@ -1,0 +1,101 @@
+---
+Description: >
+  Cristian Rodriguez - Udacity DevOps Nanodegree 2020 - Capstone Project.
+  CloudFormation Script to create EC2 instance and install Jenkins.
+
+Parameters:
+  EnvironmentName:
+    Description: EnvironmentName that will be prefixed to resources
+    ConstraintDescription: ENV is invalid! choose ENV from list
+    Type: String
+    Default: development
+    AllowedValues:
+      # ENV for development, create and test apps
+      - development 
+      # ENV to test apps before Go Live
+      - staging
+      # ENV to deploy on production and Go Live
+      - production
+  
+  KeyPairJenkinsSSH:
+    Description: Key Pair to access Jenkins
+    Type: String
+    Default: "JenkinsSSH"
+
+  NetworkAccessIP:
+    Description: Source that has SSH access to the bastion host
+    Type: String
+    Default: "0.0.0.0/0"
+
+Resources:
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for the EC2 where Jenkins will be Installed
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Sub ${NetworkAccessIP}
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Sub ${NetworkAccessIP}
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: !Sub ${NetworkAccessIP}
+  
+  JenknsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install default-jdk wget -y
+          wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+          sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+          sudo apt-get update -y
+          sudo apt-get install jenkins tidy -y
+          sudo systemctl start jenkins
+          sudo systemctl status jenkins
+      ImageId: ami-0817d428a6fb68645
+      InstanceType: t3.small
+      KeyName: !Ref KeyPairJenkinsSSH
+      SecurityGroupIds:
+      - Ref: Ec2SecurityGroup
+      SubnetId: 
+        Fn::ImportValue: 
+          !Sub "${EnvironmentName}-SUBNET1"
+      Tags:
+          - Key: Name
+            Value: Capstone-Jenkins
+    
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+    
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    DependsOn:
+      - JenknsInstance
+      - EIP
+    Properties:
+      InstanceId:
+        Ref: JenknsInstance
+      AllocationId:
+        Fn::GetAtt:
+          - EIP
+          - AllocationId
+
+Outputs:
+  WebApplication:
+    Value: !Join ['', ['http://', !GetAtt 'JenknsInstance.PublicDnsName', ':8080']]
+    Description: Public DNS for the EC2 Instance
+...
