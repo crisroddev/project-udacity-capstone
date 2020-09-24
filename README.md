@@ -1,5 +1,5 @@
 # Udacity Cloud DevOps Nanodegree - Capstone Project
-[GitHubRepository](http:www.ddd.com)
+[GitHubRepository](https://github.com/crodriguez85/project-udacity-capstone)
 
 ***
 ## Introduction
