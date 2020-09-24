@@ -37,6 +37,7 @@ pipeline {
                       sh "kubectl get deployment"
                       sh "kubectl get pod -o wide"
                       sh "kubectl get service/capstone-project-cloud-devops"
+                      sh "kubectl set image deployments/capstone-project-cloud-devops capstone-project-cloud-devops=crisroddev/capstone-project-cloud-devops:latest"
                  }
              }
          }
