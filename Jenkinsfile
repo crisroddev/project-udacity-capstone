@@ -41,5 +41,11 @@ pipeline {
                  }
              }
          }
+         stage ('Cleaning') {
+             steps {
+                 echo 'Cleaning...'
+                 sh "docker system prune"
+             }
+         }
     }
 }         
